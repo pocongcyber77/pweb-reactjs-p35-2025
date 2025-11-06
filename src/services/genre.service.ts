@@ -1,0 +1,161 @@
+import { prisma } from '../prisma/client';
+import { getPagination, getSkip, PaginationResult } from '../utils/pagination';
+
+function validateId(id: string, entity: string): void {
+  if (!id || typeof id !== 'string' || id.trim() === '') {
+    throw new Error(`${entity} ID is invalid or missing`);
+  }
+}
+
+export interface CreateGenreData {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateGenreData {
+  name?: string;
+  description?: string;
+}
+
+export interface GenreListResult {
+  genres: any[];
+  pagination: PaginationResult;
+}
+
+export const genreService = {
+  async create(data: CreateGenreData) {
+    // Basic validation for name
+    if (!data.name || data.name.trim() === '') {
+      throw new Error('Genre name is required');
+    }
+    
+    // Check if genre with same name already exists
+    const existingGenre = await prisma.genre.findFirst({
+      where: { name: data.name }
+    });
+
+    if (existingGenre) {
+      throw new Error('Genre with this name already exists');
+    }
+
+    const genre = await prisma.genre.create({
+      data: {
+        ...data,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
+
+    return genre;
+  },
+
+  async findAll(page: number, limit: number): Promise<GenreListResult> {
+    const skip = getSkip(page, limit);
+
+    const [genres, total] = await Promise.all([
+      prisma.genre.findMany({
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.genre.count(),
+    ]);
+
+    const pagination = getPagination(page, limit, total);
+
+    return { genres, pagination };
+  },
+
+  async findById(id: string) {
+    validateId(id, 'Genre');
+
+    const genre = await prisma.genre.findUnique({
+      where: { id },
+      include: {
+        books: {
+          select: {
+            id: true,
+            title: true,
+            writer: true,
+            price: true,
+            stock_quantity: true,
+          },
+        },
+      },
+    });
+
+    if (!genre) {
+      throw new Error('Genre not found');
+    }
+
+    return genre;
+  },
+
+  async update(id: string, data: UpdateGenreData) {
+    validateId(id, 'Genre');
+
+    // Optional: Basic validation for data
+    if (!data.name && !data.description) {
+      throw new Error('Update data cannot be empty');
+    }
+    if (data.name !== undefined && data.name.trim() === '') {
+        throw new Error('Genre name cannot be empty');
+    }
+
+    // Check if genre exists
+    const existingGenre = await prisma.genre.findUnique({
+      where: { id },
+    });
+
+    if (!existingGenre) {
+      throw new Error('Genre not found');
+    }
+
+    if (data.name && data.name !== existingGenre.name) {
+        const genreWithName = await prisma.genre.findFirst({
+            where: { name: data.name }
+        });
+        if (genreWithName) {
+            throw new Error('Genre with this name already exists');
+        }
+    }
+
+    const genre = await prisma.genre.update({
+      where: { id },
+      data: {
+        ...data,
+        updated_at: new Date(),
+      },
+    });
+
+    return genre;
+  },
+
+  async delete(id: string) {
+    validateId(id, 'Genre');
+    
+    // Check if genre exists
+    const genre = await prisma.genre.findUnique({
+      where: { id },
+    });
+
+    if (!genre) {
+      throw new Error('Genre not found');
+    }
+
+    // Check if genre has any books
+    const books = await prisma.book.findFirst({
+      where: { genre_id: id },
+    });
+
+    if (books) {
+      throw new Error('Cannot delete genre with existing books');
+    }
+
+    await prisma.genre.delete({
+      where: { id },
+    });
+
+    return { message: 'Genre deleted successfully' };
+  },
+};

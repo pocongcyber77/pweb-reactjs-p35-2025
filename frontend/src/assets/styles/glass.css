@@ -1,0 +1,2 @@
+.shadow-glass { box-shadow: var(--shadow-glass); }
+.glass-surface { background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.6); border-radius: var(--radius-2xl); }

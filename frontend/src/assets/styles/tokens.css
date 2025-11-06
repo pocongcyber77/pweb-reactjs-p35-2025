@@ -1,0 +1,6 @@
+:root {
+	--color-primary: #0588d9;
+	--radius-xl: 1rem;
+	--radius-2xl: 1.25rem;
+	--shadow-glass: 0 8px 30px rgba(5, 136, 217, 0.08);
+}
