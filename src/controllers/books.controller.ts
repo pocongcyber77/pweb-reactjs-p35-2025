@@ -5,9 +5,32 @@ import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import { prisma } from '../prisma/client';
 
+// Helper function to transform book from snake_case to camelCase
+function transformBook(book: any): any {
+  if (!book) return book;
+  
+  return {
+    id: book.id,
+    title: book.title,
+    writer: book.writer,
+    publisher: book.publisher,
+    publicationYear: book.publication_year,
+    description: book.description,
+    coverUrl: book.cover_url,
+    price: book.price ? Number(book.price) : book.price,
+    stockQuantity: book.stock_quantity,
+    genre: book.genre ? {
+      id: book.genre.id,
+      name: book.genre.name,
+    } : undefined,
+    createdAt: book.created_at,
+    updatedAt: book.updated_at,
+  };
+}
+
 // Helper function to handle common service errors
 function handleServiceError(res: Response, error: any): Response {
-    const message = error.message;
+    const message = error.message || '';
 
     if (error instanceof ZodError) {
         // Zod validation failed. Return a detailed 400 Bad Request.
@@ -23,19 +46,40 @@ function handleServiceError(res: Response, error: any): Response {
         });
     }
 
+    // Database errors (Prisma/PostgreSQL)
+    if (error.code === 'P2002') {
+        return res.status(409).json({ error: 'Duplicate entry. This record already exists.' });
+    }
+    
+    // PostgreSQL numeric overflow error (dari Prisma ConnectorError)
+    const errorString = JSON.stringify(error).toLowerCase();
+    if (message.includes('numeric field overflow') || 
+        message.includes('must round to an absolute value less than') ||
+        errorString.includes('numeric field overflow') ||
+        (error.cause && JSON.stringify(error.cause).includes('numeric field overflow'))) {
+        return res.status(400).json({ 
+            error: 'Nilai terlalu besar. Harga maksimal adalah Rp 99,999,999.99',
+            details: 'Field dengan precision 10, scale 2 tidak dapat menampung nilai lebih dari 99,999,999.99'
+        });
+    }
+
     // Error: Not Found (e.g., ID tidak ditemukan)
     if (message.includes('not found') || message.includes('ID is invalid')) {
         return res.status(404).json({ error: message });
     }
     
     // Error: Bad Request (e.g., duplikat title, price/stock quantity invalid, tidak bisa dihapus karena relasi)
-    if (message.includes('already exists') || message.includes('Cannot delete') || message.includes('non-negative') || message.includes('integer') || message.includes('is required')) {
+    if (message.includes('already exists') || message.includes('Cannot delete') || message.includes('non-negative') || message.includes('integer') || message.includes('is required') || message.includes('cannot exceed')) {
         return res.status(400).json({ error: message });
     }
 
     // Default: Internal Server Error (jika error tidak dikenali)
     console.error('Unhandled Controller Error:', error);
-    return res.status(500).json({ error: 'An unexpected error occurred' });
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    return res.status(500).json({ 
+        error: 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? message : undefined
+    });
 }
 
 export const booksController = {
@@ -46,7 +90,7 @@ export const booksController = {
       
       res.status(201).json({
         message: 'Book created successfully',
-        data: book,
+        data: transformBook(book),
       });
     } catch (error: any) {
       return handleServiceError(res, error);
@@ -55,13 +99,20 @@ export const booksController = {
 
   async findAll(req: Request, res: Response) {
     try {
-      const { page, limit, search, genre_id } = bookQuerySchema.parse(req.query);
-      const result = await booksService.findAll(page, limit, { search, genre_id });
+      const { page, limit, search, genre_id, sort, condition } = bookQuerySchema.parse(req.query);
+      const result = await booksService.findAll(page, limit, { search, genre_id, sort, condition });
+      
+      // Transform books from snake_case to camelCase
+      const transformedBooks = result.books.map(transformBook);
       
       res.json({
         message: 'Books retrieved successfully',
-        data: result.books,
-        pagination: result.pagination,
+        data: {
+          items: transformedBooks,
+          totalPages: result.pagination.totalPages,
+          currentPage: result.pagination.page,
+          totalItems: result.pagination.total,
+        },
       });
     } catch (error) {
       return handleServiceError(res, error);
@@ -73,9 +124,12 @@ export const booksController = {
       const { book_id } = req.params;
       const book = await booksService.findById(book_id);
       
+      // Transform book from snake_case to camelCase
+      const transformedBook = transformBook(book);
+      
       res.json({
         message: 'Book retrieved successfully',
-        data: book,
+        data: transformedBook,
       });
     } catch (error: any) {
       return handleServiceError(res, error);
@@ -88,10 +142,17 @@ export const booksController = {
       const { page, limit } = bookQuerySchema.parse(req.query);
       const result = await booksService.findByGenre(genre_id, page, limit);
       
+      // Transform books from snake_case to camelCase
+      const transformedBooks = result.books.map(transformBook);
+      
       res.json({
         message: 'Books by genre retrieved successfully',
-        data: result.books,
-        pagination: result.pagination,
+        data: {
+          items: transformedBooks,
+          totalPages: result.pagination.totalPages,
+          currentPage: result.pagination.page,
+          totalItems: result.pagination.total,
+        },
       });
     } catch (error: any) {
       return handleServiceError(res, error);
@@ -106,7 +167,7 @@ export const booksController = {
       
       res.json({
         message: 'Book updated successfully',
-        data: book,
+        data: transformBook(book),
       });
     } catch (error: any) {
       return handleServiceError(res, error);

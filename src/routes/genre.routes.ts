@@ -4,14 +4,13 @@ import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// All genre routes require authentication
-router.use(authenticateToken);
+// Public routes (no auth required)
+router.get('/', genreController.findAll); // List genres - public untuk dropdown
+router.get('/:genre_id', genreController.findById); // Get genre by ID - public
 
-// Genre CRUD operations
-router.post('/', genreController.create);
-router.get('/', genreController.findAll);
-router.get('/:genre_id', genreController.findById);
-router.patch('/:genre_id', genreController.update);
-router.delete('/:genre_id', genreController.delete);
+// Protected routes (auth required)
+router.post('/', authenticateToken, genreController.create);
+router.patch('/:genre_id', authenticateToken, genreController.update);
+router.delete('/:genre_id', authenticateToken, genreController.delete);
 
 export default router;

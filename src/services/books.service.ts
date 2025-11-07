@@ -13,6 +13,10 @@ function validateBookNumericFields(data: Partial<CreateBookData | UpdateBookData
     if (typeof data.price !== 'number' || data.price < 0) {
       throw new Error('Price must be a non-negative number');
     }
+    // Decimal(10,2) maksimal: 99,999,999.99
+    if (data.price > 99999999.99) {
+      throw new Error('Price cannot exceed 99,999,999.99 (maximum value for Decimal(10,2))');
+    }
   }
 
   if (data.stock_quantity !== undefined) {
@@ -34,6 +38,7 @@ export interface CreateBookData {
   publisher: string;
   publication_year: number;
   description?: string;
+  cover_url?: string;
   price: number;
   stock_quantity: number;
   genre_id: string;
@@ -45,6 +50,7 @@ export interface UpdateBookData {
   publisher?: string;
   publication_year?: number;
   description?: string;
+  cover_url?: string;
   price?: number;
   stock_quantity?: number;
   genre_id?: string;
@@ -53,6 +59,8 @@ export interface UpdateBookData {
 export interface BookFilters {
   search?: string;
   genre_id?: string;
+  sort?: string;
+  condition?: string;
 }
 
 export interface BookListResult {
@@ -103,7 +111,7 @@ export const booksService = {
   },
 
   async findAll(page: number, limit: number, filters: BookFilters = {}): Promise<BookListResult> {
-    const { search, genre_id } = filters;
+    const { search, genre_id, sort, condition } = filters;
     const skip = getSkip(page, limit);
 
     // Build where clause
@@ -121,6 +129,17 @@ export const booksService = {
       where.genre_id = genre_id;
     }
 
+    // Note: condition filter is not in the current schema, so we'll skip it for now
+    // If you need condition filtering, you'll need to add it to the schema first
+
+    // Build orderBy clause
+    let orderBy: any = { created_at: 'desc' };
+    if (sort === 'title') {
+      orderBy = { title: 'asc' };
+    } else if (sort === 'publication_year') {
+      orderBy = { publication_year: 'desc' };
+    }
+
     // Get books with pagination
     const [books, total] = await Promise.all([
       prisma.book.findMany({
@@ -128,7 +147,7 @@ export const booksService = {
         include: {
           genre: true,
         },
-        orderBy: { created_at: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),

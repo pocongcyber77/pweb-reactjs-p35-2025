@@ -4,15 +4,14 @@ import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// All book routes require authentication
-router.use(authenticateToken);
-
-// Book CRUD operations
-router.post('/', booksController.create);
+// Public routes (no authentication required)
 router.get('/', booksController.findAll);
 router.get('/:book_id', booksController.findById);
 router.get('/genre/:genre_id', booksController.findByGenre);
-router.patch('/:book_id', booksController.update);
-router.delete('/:book_id', booksController.delete);
+
+// Protected routes (authentication required)
+router.post('/', authenticateToken, booksController.create);
+router.patch('/:book_id', authenticateToken, booksController.update);
+router.delete('/:book_id', authenticateToken, booksController.delete);
 
 export default router;

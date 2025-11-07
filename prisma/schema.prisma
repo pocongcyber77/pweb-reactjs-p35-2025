@@ -45,6 +45,7 @@ model Book {
   publisher         String
   publication_year  Int
   description       String?
+  cover_url         String?
   price             Decimal   @db.Decimal(10, 2)
   stock_quantity    Int
   genre_id          String    @db.Uuid
@@ -86,4 +87,177 @@ model OrderItem {
   book   Book  @relation(fields: [book_id], references: [id], onDelete: Restrict)
 
   @@map("order_items")
+}
+
+/// ====================
+/// Additional schema mapped to SQL scripts (Indonesian tables)
+/// ====================
+
+enum KondisiBuku {
+  Baru
+  Bekas
+  @@map("kondisi_buku_enum")
+}
+
+enum StatusTransaksi {
+  Selesai
+  Pending
+  Dibatalkan
+  @@map("status_transaksi_enum")
+}
+
+enum StatusUlasan {
+  Tampil
+  Disembunyikan
+  Dihapus
+  @@map("status_ulasan_enum")
+}
+
+enum RoleUser {
+  Admin
+  Kasir
+  Manager
+  @@map("role_user_enum")
+}
+
+model Penulis {
+  id_penulis    Int     @id @default(autoincrement())
+  nama_penulis  String  @db.VarChar(150)
+  bio           String?
+  buku          Buku[]
+
+  @@map("penulis")
+}
+
+model Penerbit {
+  id_penerbit    Int     @id @default(autoincrement())
+  nama_penerbit  String  @db.VarChar(150)
+  alamat         String? @db.VarChar(255)
+  telepon        String? @db.VarChar(20)
+  buku           Buku[]
+
+  @@map("penerbit")
+}
+
+model KategoriRef {
+  id_kategori    Int     @id @default(autoincrement())
+  nama_kategori  String  @unique @db.VarChar(100)
+  deskripsi      String?
+  buku           Buku[]
+
+  @@map("kategori")
+}
+
+model GenreRef {
+  id_genre    Int     @id @default(autoincrement())
+  nama_genre  String  @unique @db.VarChar(100)
+  deskripsi   String?
+  buku        Buku[]
+
+  @@map("genre")
+}
+
+model Bahasa {
+  id_bahasa    Int     @id @default(autoincrement())
+  nama_bahasa  String  @unique @db.VarChar(100)
+  kode_iso     String  @unique @db.VarChar(10)
+  buku         Buku[]
+
+  @@map("bahasa")
+}
+
+model Buku {
+  id_buku          Int           @id @default(autoincrement())
+  isbn             String?       @unique @db.VarChar(20)
+  judul            String        @db.VarChar(255)
+  id_penulis       Int
+  id_penerbit      Int
+  id_kategori      Int
+  id_genre         Int
+  id_bahasa        Int
+  tahun_terbit     Int?
+  tebal_halaman    Int?
+  dimensi          String?       @db.VarChar(50)
+  berat            Decimal?      @db.Decimal(6, 2)
+  kondisi          KondisiBuku?
+  harga            Decimal       @db.Decimal(10, 2)
+  stok             Int           @default(0)
+  deskripsi        String?
+  link_cover       String?       @db.VarChar(255)
+  link_preview     String?       @db.VarChar(255)
+  tanggal_ditambahkan DateTime   @default(now())
+
+  penulis    Penulis     @relation(fields: [id_penulis], references: [id_penulis])
+  penerbit   Penerbit    @relation(fields: [id_penerbit], references: [id_penerbit])
+  kategori   KategoriRef @relation(fields: [id_kategori], references: [id_kategori])
+  genreRef   GenreRef    @relation(fields: [id_genre], references: [id_genre])
+  bahasa     Bahasa      @relation(fields: [id_bahasa], references: [id_bahasa])
+  detail     DetailTransaksi[]
+  ulasan     Ulasan[]
+
+  @@map("buku")
+}
+
+model Pelanggan {
+  id_pelanggan  Int     @id @default(autoincrement())
+  nama          String  @db.VarChar(150)
+  email         String  @unique @db.VarChar(150)
+  no_telp       String? @db.VarChar(20)
+  alamat        String? @db.VarChar(255)
+  transaksi     Transaksi[]
+  ulasan        Ulasan[]
+
+  @@map("pelanggan")
+}
+
+model AdminUser {
+  id_user   Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  password  String   @db.VarChar(255)
+  role      RoleUser @default(Kasir)
+
+  @@map("user")
+}
+
+model Transaksi {
+  id_transaksi       Int              @id @default(autoincrement())
+  id_pelanggan       Int
+  tanggal_transaksi  DateTime         @default(now())
+  total_harga        Decimal          @db.Decimal(10, 2)
+  metode_pembayaran  String?          @db.VarChar(50)
+  status             StatusTransaksi  @default(Pending)
+  pelanggan          Pelanggan        @relation(fields: [id_pelanggan], references: [id_pelanggan])
+  detail             DetailTransaksi[]
+
+  @@map("transaksi")
+}
+
+model DetailTransaksi {
+  id_detail     Int       @id @default(autoincrement())
+  id_transaksi  Int
+  id_buku       Int
+  jumlah        Int
+  harga_satuan  Decimal   @db.Decimal(10, 2)
+  // subtotal is generated in SQL; Prisma will read as column if exists, we can mark as Decimal?
+  subtotal      Decimal?  @db.Decimal(10, 2)
+
+  transaksi  Transaksi @relation(fields: [id_transaksi], references: [id_transaksi], onDelete: Cascade)
+  buku       Buku      @relation(fields: [id_buku], references: [id_buku])
+
+  @@map("detail_transaksi")
+}
+
+model Ulasan {
+  id_ulasan       Int           @id @default(autoincrement())
+  id_buku         Int
+  id_pelanggan    Int
+  rating          Int
+  komentar        String?
+  tanggal_ulasan  DateTime      @default(now())
+  status          StatusUlasan  @default(Tampil)
+
+  buku       Buku      @relation(fields: [id_buku], references: [id_buku], onDelete: Cascade)
+  pelanggan  Pelanggan @relation(fields: [id_pelanggan], references: [id_pelanggan], onDelete: Cascade)
+
+  @@map("ulasan")
 }

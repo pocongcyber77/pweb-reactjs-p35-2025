@@ -4,26 +4,37 @@ import { registerSchema, loginSchema } from '../utils/validators';
 
 // Helper function to handle common service errors
 function handleServiceError(res: Response, error: any): Response {
-    const message = error.message;
+    const message = error?.message || 'Unexpected error';
 
-    // Error: Not Found (e.g., User ID tidak ditemukan)
-    if (message.includes('not found')) {
+    // Zod validation errors
+    if (error?.name === 'ZodError') {
+        const first = error?.issues?.[0]?.message || message;
+        return res.status(400).json({ error: first });
+    }
+
+    // Prisma known errors
+    if (error?.code === 'P2002') {
+        return res.status(409).json({ error: 'User with this email already exists' });
+    }
+
+    // Error: Not Found
+    if (typeof message === 'string' && message.toLowerCase().includes('not found')) {
         return res.status(404).json({ error: message });
     }
     
-    // Error: Conflict (e.g., email sudah ada saat register)
-    if (message.includes('already exists')) {
+    // Error: Conflict
+    if (typeof message === 'string' && message.toLowerCase().includes('already exists')) {
         return res.status(409).json({ error: message });
     }
 
-    // Error: Unauthorized (e.g., login gagal)
-    if (message.includes('Invalid email or password')) {
+    // Error: Unauthorized
+    if (typeof message === 'string' && message.toLowerCase().includes('invalid email or password')) {
         return res.status(401).json({ error: message });
     }
     
-    // Default: Internal Server Error (jika error tidak dikenali)
+    // Default
     console.error('Unhandled Controller Error:', error);
-    return res.status(500).json({ error: 'An unexpected error occurred' });
+    return res.status(500).json({ error: message });
 }
 
 export const authController = {

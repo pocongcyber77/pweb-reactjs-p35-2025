@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.routes';
 import booksRoutes from './routes/books.routes';
 import genreRoutes from './routes/genre.routes';
 import transactionsRoutes from './routes/transactions.routes';
+import idRoutes from './routes/id.routes';
 
 // Load environment variables
 dotenv.config();
@@ -39,7 +40,8 @@ app.get('/', (req, res) => {
         auth: '/auth',
         books: '/books',
         genres: '/genre',
-        transactions: '/transactions'
+        transactions: '/transactions',
+        id: '/id'
       }
     },
     timestamp: new Date().toISOString(),
@@ -64,6 +66,7 @@ app.use('/auth', authRoutes);
 app.use('/books', booksRoutes);
 app.use('/genre', genreRoutes);
 app.use('/transactions', transactionsRoutes);
+app.use('/id', idRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

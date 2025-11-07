@@ -30,6 +30,7 @@ export const createBookSchema = z.object({
   publisher: z.string().min(1, 'Publisher is required'),
   publication_year: z.number().int().positive('Publication year must be positive'),
   description: z.string().optional(),
+  cover_url: z.string().url('Cover must be a valid URL').optional(),
   price: z.number().positive('Price must be positive'),
   stock_quantity: z.number().int().min(0, 'Stock cannot be negative'),
   genre_id: z.string().min(1, 'Genre ID is required'),
@@ -41,6 +42,7 @@ export const updateBookSchema = z.object({
   publisher: z.string().min(1, 'Publisher is required').optional(),
   publication_year: z.number().int().positive('Publication year must be positive').optional(),
   description: z.string().optional(),
+  cover_url: z.string().url('Cover must be a valid URL').optional(),
   price: z.number().positive('Price must be positive').optional(),
   stock_quantity: z.number().int().min(0, 'Stock cannot be negative').optional(),
   genre_id: z.string().min(1, 'Genre ID is required').optional(),
@@ -64,5 +66,14 @@ export const bookQuerySchema = z.object({
   page: z.string().transform(Number).pipe(z.number().int().positive()).default('1'),
   limit: z.string().transform(Number).pipe(z.number().int().positive().max(100)).default('10'),
   search: z.string().optional(),
+  q: z.string().optional(), // Alias for search
   genre_id: z.string().optional(),
+  sort: z.string().optional(),
+  condition: z.string().optional(),
+}).transform((data) => {
+  // Map q to search if q is provided
+  if (data.q && !data.search) {
+    data.search = data.q;
+  }
+  return data;
 });
