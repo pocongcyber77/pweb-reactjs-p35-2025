@@ -54,11 +54,11 @@ NODE_ENV=development
 PORT=3000
 
 # Database (Neon)
-DATABASE_URL=postgresql://neondb_owner:npg_RW7SXVeaUd6M@ep-nameless-violet-a1em5s86-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-DIRECT_URL=postgresql://neondb_owner:npg_RW7SXVeaUd6M@ep-nameless-violet-a1em5s86.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=postgresql://ya ga tau kok tanya saya
+DIRECT_URL=postgresql://enak aja
 
 # Auth
-JWT_SECRET=ubah_ini_dengan_secret_yang_sangat_kuat
+JWT_SECRET=adili jokowi
 
 # CORS
 CORS_ORIGIN=http://localhost:5173
