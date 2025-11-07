@@ -1,9 +1,10 @@
-# 📚 IT Literature Shop API
+# 📚 IT Literature Shop
 
-Backend API untuk sistem toko buku literatur IT yang dibangun dengan Express.js, TypeScript, Prisma ORM, dan PostgreSQL (Neon).
+Backend API dan Frontend untuk sistem toko buku literatur IT yang dibangun dengan Express.js, TypeScript, Prisma ORM, PostgreSQL (Neon), dan React + TypeScript.
 
 ## 📋 Daftar Isi
 
+- [Instalasi & Persiapan Development](#-instalasi--persiapan-development)
 - [Tentang Proyek](#-tentang-proyek)
 - [Teknologi yang Digunakan](#-teknologi-yang-digunakan)
 - [Struktur Repository](#-struktur-repository)
@@ -17,15 +18,227 @@ Backend API untuk sistem toko buku literatur IT yang dibangun dengan Express.js,
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 
+## 🚀 Instalasi & Persiapan Development
+
+### Prerequisites
+
+Pastikan sudah terinstall:
+- **Node.js** (v18 atau lebih baru)
+- **npm** atau **yarn**
+- **Git**
+- **PostgreSQL** (atau akses ke Neon cloud database)
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/pocongcyber77/pweb-reactjs-p35-2025.git
+cd pweb-reactjs-p35-2025
+```
+
+### 2. Setup Backend
+
+```bash
+# Install dependencies
+npm install
+
+# Setup environment variables
+cp env.example .env
+# Edit .env dengan konfigurasi database dan JWT secret
+nano .env
+```
+
+**Isi file `.env` backend:**
+```env
+# App
+NODE_ENV=development
+PORT=3000
+
+# Database (Neon)
+DATABASE_URL=postgresql://neondb_owner:npg_RW7SXVeaUd6M@ep-nameless-violet-a1em5s86-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DIRECT_URL=postgresql://neondb_owner:npg_RW7SXVeaUd6M@ep-nameless-violet-a1em5s86.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+# Auth
+JWT_SECRET=ubah_ini_dengan_secret_yang_sangat_kuat
+
+# CORS
+CORS_ORIGIN=http://localhost:5173
+```
+
+```bash
+# Generate Prisma client
+npm run db:generate
+
+# Run database migrations
+npm run db:migrate
+
+# Start backend development server
+npm run dev
+```
+
+Backend akan berjalan di `http://localhost:3000`
+
+### 3. Setup Frontend
+
+```bash
+# Masuk ke folder frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Setup environment variables
+echo "VITE_API_BASE_URL=http://localhost:3000" > .env
+```
+
+**Isi file `frontend/.env`:**
+```env
+# Base URL API backend
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+```bash
+# Start frontend development server
+npm run dev
+```
+
+Frontend akan berjalan di `http://localhost:5173`
+
+### 4. Verifikasi Instalasi
+
+**Test Backend:**
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Register user test
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","username":"testuser","password":"secret123"}'
+
+# Login test
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"secret123"}'
+```
+
+**Test Frontend:**
+- Buka browser: `http://localhost:5173`
+- Coba register/login dari UI
+- Navigasi ke halaman `/books` untuk melihat daftar buku
+
+### 5. Database Setup (Opsional - jika perlu schema tambahan)
+
+Jika ingin setup schema database tambahan (tabel Indonesia):
+
+```bash
+# Jalankan SQL scripts secara berurutan
+psql "$DATABASE_URL" -f sql/00_enums.sql
+psql "$DATABASE_URL" -f sql/01_core_tables.sql
+psql "$DATABASE_URL" -f sql/02_buku.sql
+psql "$DATABASE_URL" -f sql/03_pelanggan_user.sql
+psql "$DATABASE_URL" -f sql/04_transaksi.sql
+psql "$DATABASE_URL" -f sql/05_ulasan.sql
+psql "$DATABASE_URL" -f sql/99_indexes.sql
+```
+
+### 6. Development Workflow
+
+**Terminal 1 - Backend:**
+```bash
+cd /path/to/it-litshop
+npm run dev
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd /path/to/it-litshop/frontend
+npm run dev
+```
+
+**Terminal 3 - Database (opsional):**
+```bash
+cd /path/to/it-litshop
+npm run db:studio  # Prisma Studio untuk melihat data
+```
+
+### 7. Build untuk Production
+
+**Backend:**
+```bash
+npm run build
+npm start
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm run build
+npm run preview  # Preview production build
+```
+
+### 8. Testing API
+
+**Menggunakan cURL:**
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Register
+EMAIL="user$RANDOM@example.com"
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"username\":\"user1\",\"password\":\"secret123\"}"
+
+# Login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"secret123\"}"
+```
+
+**Menggunakan Postman:**
+1. Import file `IT-Literature-Shop-API.postman_collection.json`
+2. Set environment variable `BASE_URL` = `http://localhost:3000`
+3. Jalankan collection
+
+### Troubleshooting Cepat
+
+**Port sudah digunakan:**
+```bash
+# Kill process di port 3000
+lsof -ti:3000 | xargs kill -9
+
+# Kill process di port 5173
+lsof -ti:5173 | xargs kill -9
+```
+
+**Database connection error:**
+```bash
+# Cek .env DATABASE_URL
+# Regenerate Prisma client
+npm run db:generate
+```
+
+**Frontend build error:**
+```bash
+cd frontend
+rm -rf node_modules dist
+npm install
+npm run build
+```
+
+---
+
 ## 🎯 Tentang Proyek
 
-IT Literature Shop API adalah backend service untuk sistem e-commerce toko buku literatur IT. API ini menyediakan fitur-fitur lengkap untuk manajemen:
+IT Literature Shop adalah full-stack aplikasi e-commerce untuk toko buku literatur IT dengan fitur:
 
-- **Authentication & Authorization** - JWT-based auth system
+- **Backend API** - RESTful API dengan Express.js + TypeScript + Prisma
+- **Frontend Web** - React + TypeScript + TailwindCSS dengan Liquid Glass design
+- **Authentication** - JWT-based auth system
 - **Books Management** - CRUD operations untuk buku
 - **Genres Management** - Kategori buku
 - **Transactions** - Sistem transaksi dan order
-- **User Management** - Manajemen pengguna
+- **Admin Panel** - Halaman admin `/mimin` untuk manajemen buku, user, dan penulis
 
 ### Fitur Utama
 
@@ -38,6 +251,9 @@ IT Literature Shop API adalah backend service untuk sistem e-commerce toko buku 
 - ✅ **Soft Delete** untuk data integrity
 - ✅ **TypeScript** untuk type safety
 - ✅ **PostgreSQL** dengan Neon cloud database
+- ✅ **React Frontend** dengan routing dan state management
+- ✅ **Markdown Support** untuk deskripsi buku
+- ✅ **Responsive Design** mobile-first
 
 ## 🛠 Teknologi yang Digunakan
 
@@ -45,6 +261,15 @@ IT Literature Shop API adalah backend service untuk sistem e-commerce toko buku 
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **TypeScript** - Type-safe JavaScript
+
+### Frontend
+- **React** - UI library
+- **TypeScript** - Type-safe JavaScript
+- **React Router** - Client-side routing
+- **TailwindCSS** - Utility-first CSS
+- **Vite** - Build tool dan dev server
+- **React Query** - Data fetching dan caching
+- **Axios** - HTTP client
 
 ### Database & ORM
 - **PostgreSQL** - Relational database
@@ -60,6 +285,7 @@ IT Literature Shop API adalah backend service untuk sistem e-commerce toko buku 
 ### Validation & Utilities
 - **Zod** - Schema validation
 - **dotenv** - Environment variables
+- **marked** - Markdown parser
 
 ### Development Tools
 - **ts-node-dev** - Development server
@@ -69,50 +295,45 @@ IT Literature Shop API adalah backend service untuk sistem e-commerce toko buku 
 ## 📁 Struktur Repository
 
 ```
-pweb-express-p35-2025/
-├── 📁 src/                          # Source code
+it-litshop/
+├── 📁 src/                          # Backend source code
 │   ├── 📁 controllers/              # Request handlers
-│   │   ├── auth.controller.ts       # Authentication logic
-│   │   ├── books.controller.ts      # Books management
-│   │   ├── genre.controller.ts      # Genres management
-│   │   └── transactions.controller.ts # Transactions logic
 │   ├── 📁 services/                 # Business logic
-│   │   ├── auth.service.ts          # Auth business logic
-│   │   ├── books.service.ts         # Books business logic
-│   │   ├── genre.service.ts         # Genres business logic
-│   │   └── transactions.service.ts  # Transactions business logic
 │   ├── 📁 routes/                   # API routes
-│   │   ├── auth.routes.ts           # Auth endpoints
-│   │   ├── books.routes.ts          # Books endpoints
-│   │   ├── genre.routes.ts          # Genres endpoints
-│   │   └── transactions.routes.ts   # Transactions endpoints
 │   ├── 📁 middlewares/              # Custom middlewares
-│   │   ├── auth.middleware.ts       # JWT authentication
-│   │   └── error.middleware.ts      # Error handling
 │   ├── 📁 utils/                    # Utility functions
-│   │   ├── jwt.ts                   # JWT utilities
-│   │   ├── pagination.ts            # Pagination helpers
-│   │   └── validators.ts            # Zod schemas
 │   ├── 📁 prisma/                   # Database client
-│   │   └── client.ts                # Prisma client instance
 │   ├── app.ts                       # Express app configuration
 │   └── server.ts                    # Server entry point
+├── 📁 frontend/                     # Frontend React app
+│   ├── 📁 src/
+│   │   ├── 📁 pages/                # Page components
+│   │   ├── 📁 components/           # Reusable components
+│   │   ├── 📁 layouts/              # Layout components
+│   │   ├── 📁 contexts/             # React contexts
+│   │   ├── 📁 features/             # Feature modules
+│   │   ├── 📁 utils/                # Utilities
+│   │   ├── 📁 types/                # TypeScript types
+│   │   ├── App.tsx                   # Main app component
+│   │   ├── router.tsx                # Route definitions
+│   │   └── main.tsx                  # Entry point
+│   ├── package.json
+│   └── vite.config.ts
 ├── 📁 prisma/                       # Database schema & migrations
 │   ├── 📁 migrations/               # Database migrations
 │   └── schema.prisma                # Prisma schema
-├── 📁 dist/                         # Compiled JavaScript (build output)
-├── 📄 package.json                  # Dependencies & scripts
+├── 📁 sql/                          # SQL scripts (schema tambahan)
+│   ├── 00_enums.sql
+│   ├── 01_core_tables.sql
+│   ├── 02_buku.sql
+│   ├── 03_pelanggan_user.sql
+│   ├── 04_transaksi.sql
+│   ├── 05_ulasan.sql
+│   └── 99_indexes.sql
+├── 📄 package.json                  # Backend dependencies
 ├── 📄 tsconfig.json                 # TypeScript configuration
 ├── 📄 .env                          # Environment variables
 ├── 📄 env.example                   # Environment template
-├── 📄 database-setup.sql            # Database setup script
-├── 📄 NEON_SETUP.md                 # Neon database setup guide
-├── 📄 IT-Literature-Shop-API.postman_collection.json # Postman collection
-├── 📄 import-postman.json           # Alternative Postman collection
-├── 📄 test-api.sh                   # API testing script
-├── 📄 test-complete-api.sh          # Complete API test script
-├── 📄 simple-test.sh                # Simple test script
-├── 📄 start.sh                      # Production start script
 └── 📄 README.md                     # This file
 ```
 
@@ -225,6 +446,16 @@ http://localhost:3000
 - **GET** `/transactions` - Get all transactions (with pagination)
 - **GET** `/transactions/:id` - Get transaction by ID
 - **GET** `/transactions/statistics` - Get transaction statistics
+
+### 6. **Admin Endpoints** (`/id/*`)
+- **GET** `/id/buku` - List buku (schema Indonesia)
+- **POST** `/id/buku` - Create buku (Auth required)
+- **GET** `/id/penulis` - List penulis
+- **POST** `/id/penulis` - Create penulis (Auth required)
+- **GET** `/id/admin/users` - List admin users (Auth required)
+- **POST** `/id/admin/users` - Create admin user (Auth required)
+- **GET** `/id/pelanggan` - List pelanggan (Auth required)
+- **GET** `/id/pelanggan/:id/transaksi` - Get transaksi by pelanggan (Auth required)
 
 ## ⚙️ Setup & Installation
 
