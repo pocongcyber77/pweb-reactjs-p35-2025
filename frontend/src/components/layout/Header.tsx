@@ -9,6 +9,7 @@ export default function Header() {
 				<a href="/" className="font-semibold tracking-tight">IT LitShop</a>
 				<nav className="flex items-center gap-4 text-sm">
 					<a href="/books" className="hover:text-[#0588d9]">Buku</a>
+					<a href="/cart" className="hover:text-[#0588d9]">Cart</a>
 					<a href="/me/orders" className="hover:text-[#0588d9]">Transaksi</a>
 					{user ? (
 						<div className="flex items-center gap-3">

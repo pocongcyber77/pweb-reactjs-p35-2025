@@ -6,12 +6,12 @@ export default function AdminLayout() {
 			<aside className="hidden md:block border-r border-white/60 bg-white/70 backdrop-blur-md">
 				<nav className="p-4 space-y-2 text-sm">
 					<h2 className="px-2 text-xs uppercase tracking-wider text-gray-500">Admin</h2>
-					<NavLink to="/admin" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Dashboard</NavLink>
-					<NavLink to="/admin/books" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Books</NavLink>
-					<NavLink to="/admin/genres" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Genres</NavLink>
-					<NavLink to="/admin/transactions" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Transactions</NavLink>
-					<NavLink to="/admin/users" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Users</NavLink>
-					<NavLink to="/admin/analytics" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Analytics</NavLink>
+					<NavLink to="/mimin" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Dashboard</NavLink>
+					<NavLink to="/mimin/books" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Books</NavLink>
+					<NavLink to="/mimin/books/new" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Add Book</NavLink>
+					<NavLink to="/mimin/users" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Users</NavLink>
+					<NavLink to="/mimin/authors" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Authors</NavLink>
+					<NavLink to="/mimin/analytics" className={({ isActive }) => `block rounded-lg px-3 py-2 ${isActive ? 'bg-[#0588d9] text-white' : 'hover:bg-white'}`}>Analytics</NavLink>
 				</nav>
 			</aside>
 			<section className="flex flex-col min-h-screen">

@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type JSX } from 'react';
 import MainLayout from './layouts/MainLayout';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
@@ -18,9 +18,9 @@ const OrdersPage = lazy(() => import('./pages/User/OrdersPage'));
 const OrderDetailPage = lazy(() => import('./pages/User/OrderDetailPage'));
 const DashboardPage = lazy(() => import('./pages/Admin/DashboardPage'));
 const AdminBooksPage = lazy(() => import('./pages/Admin/BooksPage'));
-const GenresPage = lazy(() => import('./pages/Admin/GenresPage'));
-const TransactionsPage = lazy(() => import('./pages/Admin/TransactionsPage'));
-const UsersPage = lazy(() => import('./pages/Admin/UsersPage'));
+const AddBookPage = lazy(() => import('./pages/Admin/AddBookPage'));
+const UsersPage = lazy(() => import('./pages/Mimin/MiminUsersPage'));
+const AuthorsPage = lazy(() => import('./pages/Mimin/MiminAuthorsPage'));
 const AnalyticsPage = lazy(() => import('./pages/Admin/AnalyticsPage'));
 const AboutPage = lazy(() => import('./pages/Static/AboutPage'));
 const ContactPage = lazy(() => import('./pages/Static/ContactPage'));
@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
 		],
 	},
 	{
-		path: '/admin',
+		path: '/mimin',
 		element: <ProtectedRoute />,
 		children: [
 			{
@@ -71,9 +71,9 @@ export const router = createBrowserRouter([
 				children: [
 					{ index: true, element: withFallback(<DashboardPage />) },
 					{ path: 'books', element: withFallback(<AdminBooksPage />) },
-					{ path: 'genres', element: withFallback(<GenresPage />) },
-					{ path: 'transactions', element: withFallback(<TransactionsPage />) },
+					{ path: 'books/new', element: withFallback(<AddBookPage />) },
 					{ path: 'users', element: withFallback(<UsersPage />) },
+					{ path: 'authors', element: withFallback(<AuthorsPage />) },
 					{ path: 'analytics', element: withFallback(<AnalyticsPage />) },
 				],
 			},

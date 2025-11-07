@@ -38,25 +38,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	}, [token]);
 
 	const login = useCallback(async (email: string, password: string) => {
-		const res = await api.post('/auth/login', { email, password });
-		const t = res.data?.data?.token || res.data?.token;
-		const u = res.data?.data?.user || res.data?.user;
-		if (t) {
+		try {
+			const res = await api.post('/auth/login', { email, password });
+			const t = res.data?.data?.token || res.data?.token;
+			const u = res.data?.data?.user || res.data?.user;
+			if (!t) {
+				throw new Error('Token tidak ditemukan dalam response');
+			}
 			localStorage.setItem('token', t);
 			setToken(t);
+			if (u) setUser(u);
+		} catch (error: any) {
+			console.error('Login error:', error);
+			// Re-throw error agar bisa ditangkap di component
+			throw error;
 		}
-		if (u) setUser(u);
 	}, []);
 
 	const register = useCallback(async (email: string, password: string, username?: string) => {
-		const res = await api.post('/auth/register', { email, password, username });
-		const t = res.data?.data?.token || res.data?.token;
-		const u = res.data?.data?.user || res.data?.user;
-		if (t) {
+		try {
+			const res = await api.post('/auth/register', { email, password, username });
+			const t = res.data?.data?.token || res.data?.token;
+			const u = res.data?.data?.user || res.data?.user;
+			if (!t) {
+				throw new Error('Token tidak ditemukan dalam response');
+			}
 			localStorage.setItem('token', t);
 			setToken(t);
+			if (u) setUser(u);
+		} catch (error: any) {
+			console.error('Register error:', error);
+			// Re-throw error agar bisa ditangkap di component
+			throw error;
 		}
-		if (u) setUser(u);
 	}, []);
 
 	const logout = useCallback(() => {
