@@ -28,6 +28,16 @@ export const errorHandler = (
   // Prisma errors
   if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
+      case 'P1001':
+        return res.status(503).json({
+          error: 'Database connection error',
+          message: 'Cannot reach database server. Please check your database connection settings or ensure the database is running.',
+          details: process.env.NODE_ENV === 'development' ? {
+            code: error.code,
+            host: error.meta?.database_host,
+            port: error.meta?.database_port,
+          } : undefined,
+        });
       case 'P2002':
         return res.status(409).json({
           error: 'Duplicate entry',

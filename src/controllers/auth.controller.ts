@@ -13,6 +13,17 @@ function handleServiceError(res: Response, error: any): Response {
     }
 
     // Prisma known errors
+    if (error?.code === 'P1001') {
+        return res.status(503).json({ 
+            error: 'Database connection error',
+            message: 'Cannot reach database server. Please check your database connection settings or ensure the database is running.',
+            details: process.env.NODE_ENV === 'development' ? {
+                code: error.code,
+                host: error.meta?.database_host,
+                port: error.meta?.database_port,
+            } : undefined,
+        });
+    }
     if (error?.code === 'P2002') {
         return res.status(409).json({ error: 'User with this email already exists' });
     }
@@ -28,7 +39,7 @@ function handleServiceError(res: Response, error: any): Response {
     }
 
     // Error: Unauthorized
-    if (typeof message === 'string' && message.toLowerCase().includes('invalid email or password')) {
+    if (typeof message === 'string' && (message.toLowerCase().includes('invalid email or password') || message.toLowerCase().includes('invalid username/email or password'))) {
         return res.status(401).json({ error: message });
     }
     

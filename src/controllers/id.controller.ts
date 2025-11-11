@@ -63,10 +63,38 @@ export async function getAdminUsers(_req: Request, res: Response) {
 	res.json({ success: true, message: 'OK', data });
 }
 
+export async function getAdminUserById(req: Request, res: Response) {
+	const id = Number(req.params.id);
+	const data = await svc.getAdminUserById(id);
+	if (!data) return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+	res.json({ success: true, message: 'OK', data });
+}
+
 export async function postAdminUser(req: Request, res: Response) {
-	const { username, password, role } = req.body;
-	const created = await svc.createAdminUser({ username, password, role });
+	const { username, email, password, role } = req.body;
+	const created = await svc.createAdminUser({ username, email, password, role });
 	res.status(201).json({ success: true, message: 'User dibuat', data: created });
+}
+
+export async function putAdminUser(req: Request, res: Response) {
+	const id = Number(req.params.id);
+	const { username, email, password, role } = req.body;
+	
+	// Build update data (only include fields that are provided)
+	const updateData: any = {};
+	if (username !== undefined) updateData.username = username;
+	if (email !== undefined) updateData.email = email;
+	if (password !== undefined) updateData.password = password;
+	if (role !== undefined) updateData.role = role;
+	
+	const updated = await svc.updateAdminUser(id, updateData);
+	res.json({ success: true, message: 'User diperbarui', data: updated });
+}
+
+export async function deleteAdminUser(req: Request, res: Response) {
+	const id = Number(req.params.id);
+	await svc.deleteAdminUser(id);
+	res.json({ success: true, message: 'User dihapus' });
 }
 
 export async function getPelanggan(req: Request, res: Response) {

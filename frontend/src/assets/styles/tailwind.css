@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+/* Urbanist font untuk elemen penting */
+@layer base {
+  :root {
+    --font-urbanist: 'Urbanist', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6,
+  header,
+  .font-heading {
+    font-family: var(--font-urbanist);
+  }
+}

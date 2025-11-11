@@ -21,6 +21,7 @@ model User {
 
   // Relations
   orders      Order[]
+  favorites   Favorite[]
 
   @@map("users")
 }
@@ -39,16 +40,17 @@ model Genre {
 }
 
 model Book {
-  id                String    @id @default(uuid()) @db.Uuid
-  title             String    @unique
+  id                String         @id @default(uuid()) @db.Uuid
+  title             String         @unique
   writer            String
   publisher         String
   publication_year  Int
   description       String?
   cover_url         String?
-  price             Decimal   @db.Decimal(10, 2)
+  price             Decimal        @db.Decimal(10, 2)
   stock_quantity    Int
-  genre_id          String    @db.Uuid
+  genre_id          String         @db.Uuid
+  condition         KondisiBuku?
   created_at        DateTime
   updated_at        DateTime
   deleted_at        DateTime?
@@ -56,6 +58,7 @@ model Book {
   // Relations
   genre       Genre      @relation(fields: [genre_id], references: [id], onDelete: Restrict)
   order_items OrderItem[]
+  favorites   Favorite[]
 
   @@map("books")
 }
@@ -89,6 +92,20 @@ model OrderItem {
   @@map("order_items")
 }
 
+model Favorite {
+  id          String    @id @default(uuid()) @db.Uuid
+  user_id     String    @db.Uuid
+  book_id     String    @db.Uuid
+  created_at  DateTime  @default(now())
+
+  // Relations
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  book  Book  @relation(fields: [book_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, book_id])
+  @@map("favorites")
+}
+
 /// ====================
 /// Additional schema mapped to SQL scripts (Indonesian tables)
 /// ====================
@@ -96,6 +113,10 @@ model OrderItem {
 enum KondisiBuku {
   Baru
   Bekas
+  Berkarat
+  Berjamur
+  Kroak
+  Hilang
   @@map("kondisi_buku_enum")
 }
 
@@ -114,9 +135,10 @@ enum StatusUlasan {
 }
 
 enum RoleUser {
+  User
   Admin
-  Kasir
-  Manager
+  Presiden
+  Dewa
   @@map("role_user_enum")
 }
 
@@ -213,8 +235,9 @@ model Pelanggan {
 model AdminUser {
   id_user   Int      @id @default(autoincrement())
   username  String   @unique @db.VarChar(50)
+  email     String   @unique @db.VarChar(150)
   password  String   @db.VarChar(255)
-  role      RoleUser @default(Kasir)
+  role      RoleUser @default(User)
 
   @@map("user")
 }

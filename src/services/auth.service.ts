@@ -9,7 +9,7 @@ export interface RegisterData {
 }
 
 export interface LoginData {
-  email: string;
+  emailOrUsername: string;
   password: string;
 }
 
@@ -60,22 +60,71 @@ export const authService = {
   },
 
   async login(data: LoginData) {
-    const { email, password } = data;
+    const { emailOrUsername, password } = data;
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Check if input is email or username
+    const isEmail = emailOrUsername.includes('@');
+    
+    // Try to find user in User table (users) first
+    let user = isEmail
+      ? await prisma.user.findUnique({
+          where: { email: emailOrUsername },
+        })
+      : await prisma.user.findFirst({
+          where: { username: emailOrUsername },
+        });
 
+    let userType: 'User' | 'AdminUser' = 'User';
+    let userId: string;
+    let userEmail: string;
+    let userUsername: string | null;
+
+    // If not found in User table, try AdminUser table (user)
     if (!user) {
-      throw new Error('Invalid email or password');
+      const adminUser = isEmail
+        ? await prisma.adminUser.findUnique({
+            where: { email: emailOrUsername },
+          })
+        : await prisma.adminUser.findFirst({
+            where: { username: emailOrUsername },
+          });
+
+      if (!adminUser) {
+        throw new Error('Invalid username/email or password');
+      }
+
+      // Verify password for AdminUser
+      const isValidPassword = await bcrypt.compare(password, adminUser.password);
+      if (!isValidPassword) {
+        throw new Error('Invalid username/email or password');
+      }
+
+      userType = 'AdminUser';
+      userId = adminUser.id_user.toString();
+      userEmail = adminUser.email;
+      userUsername = adminUser.username;
+
+      // Generate token
+      const token = generateToken({
+        userId: userId,
+        email: userEmail,
+      });
+
+      return {
+        user: {
+          id: userId,
+          email: userEmail,
+          username: userUsername,
+          role: adminUser.role,
+        },
+        token,
+      };
     }
 
-    // Verify password
+    // Verify password for User
     const isValidPassword = await bcrypt.compare(password, user.password);
-
     if (!isValidPassword) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid username/email or password');
     }
 
     // Generate token
@@ -96,20 +145,43 @@ export const authService = {
   },
 
   async getProfile(userId: string) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        created_at: true,
-      },
-    });
+    // Check if userId is UUID format (User table) or numeric (AdminUser table)
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    
+    if (isUUID) {
+      // Try to find in User table (users) - UUID format
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          created_at: true,
+        },
+      });
 
-    if (!user) {
-      throw new Error('User not found');
+      if (user) {
+        return user;
+      }
     }
 
-    return user;
+    // If not found in User table or not UUID format, try AdminUser table (user)
+    const userIdInt = parseInt(userId);
+    if (!isNaN(userIdInt)) {
+      const adminUser = await prisma.adminUser.findUnique({
+        where: { id_user: userIdInt },
+      });
+
+      if (adminUser) {
+        return {
+          id: adminUser.id_user.toString(),
+          email: adminUser.email,
+          username: adminUser.username,
+          role: adminUser.role,
+        };
+      }
+    }
+
+    throw new Error('User not found');
   },
 };

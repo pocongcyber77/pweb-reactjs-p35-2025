@@ -6,6 +6,19 @@ import { createGenreSchema, updateGenreSchema, paginationSchema } from '../utils
 function handleServiceError(res: Response, error: any): Response {
     const message = error.message;
 
+    // Database connection errors
+    if (error.code === 'P1001') {
+        return res.status(503).json({ 
+            error: 'Database connection error',
+            message: 'Cannot reach database server. Please check your database connection settings or ensure the database is running.',
+            details: process.env.NODE_ENV === 'development' ? {
+                code: error.code,
+                host: error.meta?.database_host,
+                port: error.meta?.database_port,
+            } : undefined,
+        });
+    }
+
     // Error: Not Found (e.g., ID tidak ditemukan)
     if (message.includes('not found') || message.includes('ID is invalid')) {
         return res.status(404).json({ error: message });

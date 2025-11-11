@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { genreController } from '../controllers/genre.controller';
-import { authenticateToken } from '../middlewares/auth.middleware';
+import { authenticateToken, requireAdminRole } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -8,9 +8,9 @@ const router = Router();
 router.get('/', genreController.findAll); // List genres - public untuk dropdown
 router.get('/:genre_id', genreController.findById); // Get genre by ID - public
 
-// Protected routes (auth required)
-router.post('/', authenticateToken, genreController.create);
-router.patch('/:genre_id', authenticateToken, genreController.update);
-router.delete('/:genre_id', authenticateToken, genreController.delete);
+// Protected routes (require admin role)
+router.post('/', authenticateToken, requireAdminRole, genreController.create);
+router.patch('/:genre_id', authenticateToken, requireAdminRole, genreController.update);
+router.delete('/:genre_id', authenticateToken, requireAdminRole, genreController.delete);
 
 export default router;

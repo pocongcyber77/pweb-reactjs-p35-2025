@@ -1,4 +1,6 @@
-import { prisma, Prisma } from '../prisma/client';
+import bcrypt from 'bcrypt';
+import { prisma } from '../prisma/client';
+import { Prisma } from '@prisma/client';
 
 export async function listBuku(params: { q?: string; condition?: string; sort?: string; page?: number; limit?: number }) {
 	const { q, condition, sort, page = 1, limit = 10 } = params;
@@ -91,8 +93,32 @@ export async function listAdminUsers() {
 	return prisma.adminUser.findMany({ orderBy: { username: 'asc' } });
 }
 
-export async function createAdminUser(data: { username: string; password: string; role: 'Admin'|'Kasir'|'Manager' }) {
-	return prisma.adminUser.create({ data });
+export async function getAdminUserById(id_user: number) {
+	return prisma.adminUser.findUnique({ where: { id_user } });
+}
+
+export async function createAdminUser(data: { username: string; email: string; password: string; role: 'User'|'Admin'|'Presiden'|'Dewa' }) {
+	const saltRounds = 12;
+	const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+	return prisma.adminUser.create({ 
+		data: {
+			...data,
+			password: hashedPassword
+		}
+	});
+}
+
+export async function updateAdminUser(id_user: number, data: { username?: string; email?: string; password?: string; role?: 'User'|'Admin'|'Presiden'|'Dewa' }) {
+	const updateData: any = { ...data };
+	if (data.password) {
+		const saltRounds = 12;
+		updateData.password = await bcrypt.hash(data.password, saltRounds);
+	}
+	return prisma.adminUser.update({ where: { id_user }, data: updateData });
+}
+
+export async function deleteAdminUser(id_user: number) {
+	return prisma.adminUser.delete({ where: { id_user } });
 }
 
 export async function listPelanggan(params?: { q?: string }) {

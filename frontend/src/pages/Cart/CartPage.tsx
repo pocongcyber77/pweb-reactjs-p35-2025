@@ -1,26 +1,39 @@
 import SeoHelmet from '../../components/layout/SeoHelmet';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import { api } from '../../utils/http';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CartPage() {
 	const { items, subtotal, update, remove, clear } = useCart();
+	const { token } = useAuth();
+	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 
 	async function checkout() {
 		setMessage(null);
-		if (items.length === 0) { setMessage('Keranjang kosong'); return; }
+		if (items.length === 0) { 
+			setMessage('Keranjang kosong'); 
+			return; 
+		}
+		if (!token) {
+			setMessage('Silakan login terlebih dahulu untuk checkout');
+			setTimeout(() => navigate('/auth/login'), 2000);
+			return;
+		}
 		setLoading(true);
 		try {
 			await api.post('/transactions', {
-				items: items.map((i) => ({ bookId: i.bookId, quantity: i.quantity })),
+				items: items.map((i) => ({ book_id: i.bookId, quantity: i.quantity })),
 			});
 			setMessage('Transaksi berhasil dibuat');
 			clear();
 		} catch (e: any) {
-			setMessage(e?.response?.data?.message || 'Gagal membuat transaksi');
+			const errorMsg = e?.response?.data?.error || e?.response?.data?.message || e?.response?.data?.details || 'Gagal membuat transaksi';
+			setMessage(errorMsg);
 		} finally {
 			setLoading(false);
 		}

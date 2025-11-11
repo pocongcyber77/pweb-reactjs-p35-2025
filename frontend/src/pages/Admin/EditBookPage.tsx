@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import SeoHelmet from '../../components/layout/SeoHelmet';
 import { api } from '../../utils/http';
 import Button from '../../components/ui/Button';
@@ -8,9 +9,12 @@ import rehypeRaw from 'rehype-raw';
 
 interface Genre { id: string; name: string }
 
-export default function AddBookPage() {
+export default function EditBookPage() {
+	const { id } = useParams();
+	const navigate = useNavigate();
 	const [genres, setGenres] = useState<Genre[]>([]);
 	const [loadingGenres, setLoadingGenres] = useState(true);
+	const [loadingBook, setLoadingBook] = useState(true);
 	const [genreError, setGenreError] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
@@ -27,26 +31,47 @@ export default function AddBookPage() {
 	const [coverUrl, setCoverUrl] = useState('');
 
 	useEffect(() => {
+		// Load genres
 		api.get('/genre')
 			.then((res) => {
-				console.log('Genre response:', res.data);
-				// Backend mengembalikan { message, data: genres[], pagination }
 				const genresList = res.data?.data || res.data?.items || res.data || [];
 				if (Array.isArray(genresList)) {
 					const sorted = [...genresList].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 					setGenres(sorted);
 					setGenreError(null);
 				} else {
-					console.error('Invalid genres format:', genresList);
 					setGenreError('Format data genre tidak valid');
 				}
 			})
 			.catch((err) => {
-				console.error('Error loading genres:', err);
 				setGenreError(err?.response?.data?.error || 'Gagal memuat genre');
 			})
 			.finally(() => setLoadingGenres(false));
-	}, []);
+
+		// Load book data
+		if (id) {
+			api.get(`/books/${id}`)
+				.then((res) => {
+					const book = res.data?.data || res.data;
+					if (book) {
+						setTitle(book.title || '');
+						setWriter(book.writer || '');
+						setPublisher(book.publisher || '');
+						setPrice(book.price ? Number(book.price) : '');
+						setStockQuantity(book.stockQuantity || '');
+						setGenreId(book.genre?.id || '');
+						setDescription(book.description || '');
+						setPublicationYear(book.publicationYear || '');
+						setCondition(book.condition || '');
+						setCoverUrl(book.coverUrl || '');
+					}
+				})
+				.catch((err) => {
+					setError(err?.response?.data?.message || 'Gagal memuat data buku');
+				})
+				.finally(() => setLoadingBook(false));
+		}
+	}, [id]);
 
 	const markdownPreview = useMemo(() => description || '', [description]);
 
@@ -61,7 +86,6 @@ export default function AddBookPage() {
 			setError('Penerbit wajib diisi');
 			return;
 		}
-		// Validasi harga: maksimal 99,999,999.99 (Decimal(10,2))
 		const priceNum = Number(price);
 		if (priceNum > 99999999.99) {
 			setError('Harga maksimal adalah Rp 99,999,999.99');
@@ -73,7 +97,6 @@ export default function AddBookPage() {
 		}
 		try {
 			setSaving(true);
-			// Format data sesuai backend (snake_case)
 			const bookData: any = {
 				title: title.trim(),
 				writer: writer.trim(),
@@ -81,13 +104,11 @@ export default function AddBookPage() {
 				price: Number(price),
 				stock_quantity: Number(stockQuantity),
 				genre_id: genreId,
-				// publication_year is required in database, use current year if not provided
 				publication_year: publicationYear && Number(publicationYear) > 0 
 					? Number(publicationYear) 
 					: new Date().getFullYear(),
 			};
 			
-			// Tambahkan field optional jika ada
 			if (description && description.trim()) {
 				bookData.description = description.trim();
 			}
@@ -98,31 +119,33 @@ export default function AddBookPage() {
 				bookData.condition = condition.trim();
 			}
 			
-			console.log('Sending book data:', bookData);
-			const response = await api.post('/books', bookData);
-			console.log('Book created:', response.data);
-			alert('Buku berhasil ditambahkan!');
-			window.location.href = '/mimin/books';
+			await api.patch(`/books/${id}`, bookData);
+			alert('Buku berhasil diperbarui!');
+			navigate('/mimin/books');
 		} catch (e: any) {
-			console.error('Error creating book:', e);
 			const errorData = e?.response?.data || {};
-			let errorMessage = errorData.error || errorData.message || e?.message || 'Gagal menyimpan buku. Periksa data yang Anda masukkan.';
-			
-			// Tambahkan details jika ada
+			let errorMessage = errorData.error || errorData.message || e?.message || 'Gagal memperbarui buku.';
 			if (errorData.details) {
 				errorMessage += `\n${errorData.details}`;
 			}
-			
 			setError(errorMessage);
 		} finally {
 			setSaving(false);
 		}
 	}
 
+	if (loadingBook) {
+		return (
+			<div className="min-h-screen py-10 px-4">
+				<div className="text-gray-500">Memuat data buku...</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="min-h-screen py-10 px-4">
-			<SeoHelmet title="Tambah Buku | IT Literature Store" description="Form untuk menambahkan buku baru dengan genre." />
-			<h1 className="text-3xl font-bold text-[#0588d9] mb-6">Tambah Buku</h1>
+			<SeoHelmet title="Edit Buku | IT Literature Store" description="Form untuk mengedit buku." />
+			<h1 className="text-3xl font-bold text-[#0588d9] mb-6">Edit Buku</h1>
 			<form onSubmit={onSubmit} className="rounded-2xl bg-white/70 backdrop-blur-md shadow-glass p-6 border border-white/60 space-y-4 max-w-3xl">
 				{error && (
 					<div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3 whitespace-pre-line">
@@ -170,9 +193,6 @@ export default function AddBookPage() {
 						{genreError && genres.length === 0 && !loadingGenres && (
 							<p className="text-xs text-red-600 mt-1">{genreError}</p>
 						)}
-						{genres.length > 0 && (
-							<p className="text-xs text-gray-500 mt-1">{genres.length} genre tersedia</p>
-						)}
 					</label>
 				</div>
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -197,8 +217,12 @@ export default function AddBookPage() {
 						</div>
 					</div>
 				</div>
-				<Button disabled={saving} type="submit">{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+				<div className="flex gap-3">
+					<Button disabled={saving} type="submit">{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</Button>
+					<Button type="button" variant="ghost" onClick={() => navigate('/mimin/books')}>Batal</Button>
+				</div>
 			</form>
 		</div>
 	);
 }
+

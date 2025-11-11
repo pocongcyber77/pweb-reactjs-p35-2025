@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.routes';
 import booksRoutes from './routes/books.routes';
 import genreRoutes from './routes/genre.routes';
 import transactionsRoutes from './routes/transactions.routes';
+import favoritesRoutes from './routes/favorites.routes';
 import idRoutes from './routes/id.routes';
 
 // Load environment variables
@@ -20,8 +21,17 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
-app.use(cors({ origin: corsOrigin, credentials: true }));
+const rawOrigins = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = rawOrigins.split(',').map(o => o.trim()).filter(Boolean);
+app.use(cors({
+	origin: (origin, callback) => {
+		// allow requests with no origin (like curl or mobile apps)
+		if (!origin) return callback(null, true);
+		if (allowedOrigins.includes(origin)) return callback(null, true);
+		return callback(new Error(`Not allowed by CORS: ${origin}`));
+	},
+	credentials: true,
+}));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -41,6 +51,7 @@ app.get('/', (req, res) => {
         books: '/books',
         genres: '/genre',
         transactions: '/transactions',
+        favorites: '/favorites',
         id: '/id'
       }
     },
@@ -66,6 +77,7 @@ app.use('/auth', authRoutes);
 app.use('/books', booksRoutes);
 app.use('/genre', genreRoutes);
 app.use('/transactions', transactionsRoutes);
+app.use('/favorites', favoritesRoutes);
 app.use('/id', idRoutes);
 
 // Error handling middleware

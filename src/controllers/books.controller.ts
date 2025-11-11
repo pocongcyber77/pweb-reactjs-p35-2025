@@ -19,6 +19,7 @@ function transformBook(book: any): any {
     coverUrl: book.cover_url,
     price: book.price ? Number(book.price) : book.price,
     stockQuantity: book.stock_quantity,
+    condition: book.condition,
     genre: book.genre ? {
       id: book.genre.id,
       name: book.genre.name,
@@ -47,6 +48,17 @@ function handleServiceError(res: Response, error: any): Response {
     }
 
     // Database errors (Prisma/PostgreSQL)
+    if (error.code === 'P1001') {
+        return res.status(503).json({ 
+            error: 'Database connection error',
+            message: 'Cannot reach database server. Please check your database connection settings or ensure the database is running.',
+            details: process.env.NODE_ENV === 'development' ? {
+                code: error.code,
+                host: error.meta?.database_host,
+                port: error.meta?.database_port,
+            } : undefined,
+        });
+    }
     if (error.code === 'P2002') {
         return res.status(409).json({ error: 'Duplicate entry. This record already exists.' });
     }

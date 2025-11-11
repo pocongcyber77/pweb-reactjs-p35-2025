@@ -7,6 +7,7 @@ export default function BooksPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [q, setQ] = useState('');
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	useEffect(() => {
 		setLoading(true);
@@ -15,6 +16,26 @@ export default function BooksPage() {
 			.catch((e) => setError(e?.response?.data?.message || 'Gagal memuat buku'))
 			.finally(() => setLoading(false));
 	}, [q]);
+
+	async function handleDelete(book: any) {
+		const id = book.id || book.id_buku;
+		if (!id) return;
+		const title = book.title || book.judul || 'buku ini';
+		const ok = window.confirm(`Hapus "${title}"? Tindakan ini tidak bisa dibatalkan.`);
+		if (!ok) return;
+		try {
+			setDeletingId(String(id));
+			// Hanya mendukung model /books (UUID). Jika yang tampil model Indonesia (id_buku),
+			// sebaiknya diarahkan ke halaman ID admin. Di sini kita coba hapus via /books terlebih dahulu.
+			await api.delete(`/books/${id}`);
+			setItems((prev) => prev.filter((b) => (b.id || b.id_buku) !== id));
+		} catch (e: any) {
+			const msg = e?.response?.data?.error || e?.response?.data?.message || e?.message || 'Gagal menghapus buku';
+			alert(msg);
+		} finally {
+			setDeletingId(null);
+		}
+	}
 
 	return (
 		<div className="min-h-screen py-10 px-4">
@@ -45,7 +66,19 @@ export default function BooksPage() {
 							<td className="px-3 py-2">{b.genre?.name || b.genreRef?.nama_genre || '-'}</td>
 							<td className="px-3 py-2">Rp {(b.price ?? b.harga)?.toLocaleString?.('id-ID') || b.price}</td>
 							<td className="px-3 py-2">{b.stockQuantity ?? b.stok ?? 0}</td>
-							<td className="px-3 py-2"><a className="text-[#0588d9]" href={`/books/${b.id || b.id_buku}`}>Lihat</a></td>
+							<td className="px-3 py-2">
+								<div className="flex gap-2">
+									<a className="text-[#0588d9] hover:underline" href={`/books/${b.id || b.id_buku}`}>Lihat</a>
+									<a className="text-green-600 hover:underline" href={`/mimin/books/${b.id || b.id_buku}/edit`}>Edit</a>
+									<button
+										onClick={() => handleDelete(b)}
+										disabled={deletingId === String(b.id || b.id_buku)}
+										className="text-red-600 hover:underline disabled:opacity-50"
+									>
+										{deletingId === String(b.id || b.id_buku) ? 'Menghapus...' : 'Hapus'}
+									</button>
+								</div>
+							</td>
 						</tr>
 					))}
 				</tbody>

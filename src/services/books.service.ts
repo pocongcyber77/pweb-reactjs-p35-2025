@@ -54,6 +54,7 @@ export interface UpdateBookData {
   price?: number;
   stock_quantity?: number;
   genre_id?: string;
+  condition?: string;
 }
 
 export interface BookFilters {
@@ -129,8 +130,9 @@ export const booksService = {
       where.genre_id = genre_id;
     }
 
-    // Note: condition filter is not in the current schema, so we'll skip it for now
-    // If you need condition filtering, you'll need to add it to the schema first
+    if (condition) {
+      where.condition = condition;
+    }
 
     // Build orderBy clause
     let orderBy: any = { created_at: 'desc' };
@@ -231,12 +233,26 @@ export const booksService = {
       }
     }
 
+    // Build update data object - only include fields that exist in Prisma schema
+    const updatePayload: any = {
+      updated_at: new Date(),
+    };
+
+    // Add fields only if they are provided and valid
+    if (data.title !== undefined) updatePayload.title = data.title;
+    if (data.writer !== undefined) updatePayload.writer = data.writer;
+    if (data.publisher !== undefined) updatePayload.publisher = data.publisher;
+    if (data.publication_year !== undefined) updatePayload.publication_year = data.publication_year;
+    if (data.description !== undefined) updatePayload.description = data.description;
+    if (data.cover_url !== undefined) updatePayload.cover_url = data.cover_url;
+    if (data.price !== undefined) updatePayload.price = data.price;
+    if (data.stock_quantity !== undefined) updatePayload.stock_quantity = data.stock_quantity;
+    if (data.condition !== undefined) updatePayload.condition = data.condition;
+    if (data.genre_id !== undefined) updatePayload.genre_id = data.genre_id;
+
     const book = await prisma.book.update({
       where: { id },
-      data: {
-        ...data,
-        updated_at: new Date(),
-      },
+      data: updatePayload,
       include: {
         genre: true,
       },

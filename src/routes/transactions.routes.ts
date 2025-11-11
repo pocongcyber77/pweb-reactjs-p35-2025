@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { ordersController } from '../controllers/transactions.controller';
-import { authenticateToken } from '../middlewares/auth.middleware';
+import { authenticateToken, requireAdminRole } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// All order routes require authentication
-router.use(authenticateToken);
-
 // Order operations
-router.post('/', ordersController.create);
-router.get('/', ordersController.findAll);
-router.get('/statistics', ordersController.getStatistics);
-router.get('/:order_id', ordersController.findById);
+// Regular users can create orders
+router.post('/', authenticateToken, ordersController.create);
+
+// Admin-only routes (require admin role)
+router.get('/', authenticateToken, requireAdminRole, ordersController.findAll);
+router.get('/statistics', authenticateToken, requireAdminRole, ordersController.getStatistics);
+router.get('/:order_id', authenticateToken, requireAdminRole, ordersController.findById);
 
 export default router;

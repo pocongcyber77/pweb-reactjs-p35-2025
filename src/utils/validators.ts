@@ -8,7 +8,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  emailOrUsername: z.string().min(1, 'Username or email is required'),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -34,6 +34,7 @@ export const createBookSchema = z.object({
   price: z.number().positive('Price must be positive'),
   stock_quantity: z.number().int().min(0, 'Stock cannot be negative'),
   genre_id: z.string().min(1, 'Genre ID is required'),
+  condition: z.enum(['Baru', 'Bekas', 'Berkarat', 'Berjamur', 'Kroak', 'Hilang']).optional(),
 });
 
 export const updateBookSchema = z.object({
@@ -46,6 +47,7 @@ export const updateBookSchema = z.object({
   price: z.number().positive('Price must be positive').optional(),
   stock_quantity: z.number().int().min(0, 'Stock cannot be negative').optional(),
   genre_id: z.string().min(1, 'Genre ID is required').optional(),
+  condition: z.enum(['Baru', 'Bekas', 'Berkarat', 'Berjamur', 'Kroak', 'Hilang']).optional(),
 });
 
 // Transaction validators

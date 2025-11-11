@@ -21,6 +21,19 @@ function handleServiceError(res: Response, error: any): Response {
             details: issues 
         });
     }
+
+    // Database connection errors
+    if (error.code === 'P1001') {
+        return res.status(503).json({ 
+            error: 'Database connection error',
+            message: 'Cannot reach database server. Please check your database connection settings or ensure the database is running.',
+            details: process.env.NODE_ENV === 'development' ? {
+                code: error.code,
+                host: error.meta?.database_host,
+                port: error.meta?.database_port,
+            } : undefined,
+        });
+    }
     
     // Error: Not Found (e.g., User/Book/Order ID tidak ditemukan/invalid)
     if (message.includes('not found') || message.includes('ID is invalid')) {
